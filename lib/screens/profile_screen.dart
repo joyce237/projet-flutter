@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import '../providers/auth_provider.dart';
 import '../providers/app_provider.dart';
 import '../models/user_model.dart';
@@ -15,13 +16,82 @@ class ProfileScreen extends StatelessWidget {
       backgroundColor: Colors.grey[50],
       body: Consumer2<AuthProvider, AppProvider>(
         builder: (context, authProvider, appProvider, _) {
+          // Debug: Afficher l'état d'authentification
+          print('ProfileScreen - État auth: ${authProvider.state}');
+          print(
+            'ProfileScreen - isAuthenticated: ${authProvider.isAuthenticated}',
+          );
+          print('ProfileScreen - user: ${authProvider.user?.name ?? 'null'}');
+          print('ProfileScreen - errorMessage: ${authProvider.errorMessage}');
+
           if (authProvider.isLoading) {
             return const Center(child: CircularProgressIndicator());
           }
 
           if (!authProvider.isAuthenticated || authProvider.user == null) {
-            return const Center(
-              child: Text('Utilisateur non connecté'),
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.person_off, size: 64, color: Colors.grey),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Utilisateur non connecté',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  Text('État: ${authProvider.state}'),
+                  if (authProvider.errorMessage != null)
+                    Text(
+                      'Erreur: ${authProvider.errorMessage}',
+                      style: const TextStyle(color: Colors.red),
+                      textAlign: TextAlign.center,
+                    ),
+                  const SizedBox(height: 24),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      ElevatedButton.icon(
+                        onPressed: () async {
+                          await authProvider.reloadUserData();
+                        },
+                        icon: const Icon(Icons.refresh),
+                        label: const Text('Recharger'),
+                      ),
+                      const SizedBox(width: 16),
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          final firebaseUser =
+                              firebase_auth.FirebaseAuth.instance.currentUser;
+                          if (firebaseUser != null) {
+                            print(
+                              'Firebase user exists: ${firebaseUser.email}',
+                            );
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  'Firebase user: ${firebaseUser.email}',
+                                ),
+                              ),
+                            );
+                          } else {
+                            print('No Firebase user found');
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Aucun utilisateur Firebase trouvé',
+                                ),
+                              ),
+                            );
+                          }
+                        },
+                        icon: const Icon(Icons.info),
+                        label: const Text('Debug'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             );
           }
 
@@ -53,7 +123,11 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildAppBar(BuildContext context, UserModel user, AuthProvider authProvider) {
+  Widget _buildAppBar(
+    BuildContext context,
+    UserModel user,
+    AuthProvider authProvider,
+  ) {
     return SliverAppBar(
       expandedHeight: 280,
       pinned: true,
@@ -64,10 +138,7 @@ class ProfileScreen extends StatelessWidget {
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [
-                Colors.teal.shade400,
-                Colors.teal.shade600,
-              ],
+              colors: [Colors.teal.shade400, Colors.teal.shade600],
             ),
           ),
           child: SafeArea(
@@ -95,7 +166,10 @@ class ProfileScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(20),
@@ -152,11 +226,10 @@ class ProfileScreen extends StatelessWidget {
                 fit: BoxFit.cover,
                 placeholder: (context, url) => Container(
                   color: Colors.white,
-                  child: const Center(
-                    child: CircularProgressIndicator(),
-                  ),
+                  child: const Center(child: CircularProgressIndicator()),
                 ),
-                errorWidget: (context, url, error) => _buildAvatarFallback(user),
+                errorWidget: (context, url, error) =>
+                    _buildAvatarFallback(user),
               )
             : _buildAvatarFallback(user),
       ),
@@ -190,16 +263,17 @@ class ProfileScreen extends StatelessWidget {
           children: [
             const Text(
               'Informations personnelles',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
             _buildInfoRow(Icons.person_outline, 'Nom', user.displayName),
             _buildInfoRow(Icons.email_outlined, 'Email', user.email),
             if (user.phoneNumber != null)
-              _buildInfoRow(Icons.phone_outlined, 'Téléphone', user.phoneNumber!),
+              _buildInfoRow(
+                Icons.phone_outlined,
+                'Téléphone',
+                user.phoneNumber!,
+              ),
             _buildInfoRow(
               Icons.calendar_today_outlined,
               'Membre depuis',
@@ -251,7 +325,11 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSettingsCard(BuildContext context, AppProvider appProvider, AuthProvider authProvider) {
+  Widget _buildSettingsCard(
+    BuildContext context,
+    AppProvider appProvider,
+    AuthProvider authProvider,
+  ) {
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -262,10 +340,7 @@ class ProfileScreen extends StatelessWidget {
           children: [
             const Text(
               'Préférences',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
             _buildSettingsTile(
@@ -308,12 +383,7 @@ class ProfileScreen extends StatelessWidget {
         children: [
           Icon(icon, color: Colors.teal),
           const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              title,
-              style: const TextStyle(fontSize: 16),
-            ),
-          ),
+          Expanded(child: Text(title, style: const TextStyle(fontSize: 16))),
           trailing,
         ],
       ),
@@ -331,10 +401,7 @@ class ProfileScreen extends StatelessWidget {
           children: [
             const Text(
               'Statistiques',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
             Row(
@@ -346,7 +413,11 @@ class ProfileScreen extends StatelessWidget {
                   child: _buildStatItem('Favoris', '0', Icons.favorite_outline),
                 ),
                 Expanded(
-                  child: _buildStatItem('Commandes', '0', Icons.shopping_bag_outlined),
+                  child: _buildStatItem(
+                    'Commandes',
+                    '0',
+                    Icons.shopping_bag_outlined,
+                  ),
                 ),
               ],
             ),
@@ -369,13 +440,7 @@ class ProfileScreen extends StatelessWidget {
             color: Colors.teal,
           ),
         ),
-        Text(
-          label,
-          style: TextStyle(
-            color: Colors.grey[600],
-            fontSize: 14,
-          ),
-        ),
+        Text(label, style: TextStyle(color: Colors.grey[600], fontSize: 14)),
       ],
     );
   }
@@ -412,12 +477,14 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildActionTile(IconData icon, String title, VoidCallback onTap, {bool isDestructive = false}) {
+  Widget _buildActionTile(
+    IconData icon,
+    String title,
+    VoidCallback onTap, {
+    bool isDestructive = false,
+  }) {
     return ListTile(
-      leading: Icon(
-        icon,
-        color: isDestructive ? Colors.red : Colors.teal,
-      ),
+      leading: Icon(icon, color: isDestructive ? Colors.red : Colors.teal),
       title: Text(
         title,
         style: TextStyle(
@@ -466,7 +533,11 @@ class ProfileScreen extends StatelessWidget {
       context: context,
       applicationName: 'HomePharma',
       applicationVersion: '1.0.0',
-      applicationIcon: const Icon(Icons.local_pharmacy, size: 48, color: Colors.teal),
+      applicationIcon: const Icon(
+        Icons.local_pharmacy,
+        size: 48,
+        color: Colors.teal,
+      ),
       children: [
         const Text(
           'HomePharma vous aide à trouver vos médicaments dans les pharmacies les plus proches de vous.',
@@ -488,9 +559,38 @@ class ProfileScreen extends StatelessWidget {
               child: const Text('Annuler'),
             ),
             TextButton(
-              onPressed: () {
+              onPressed: () async {
                 Navigator.of(context).pop();
-                authProvider.signOut();
+
+                try {
+                  await authProvider.signOut();
+
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Row(
+                          children: [
+                            Icon(Icons.check_circle, color: Colors.white),
+                            SizedBox(width: 12),
+                            Text('Déconnecté avec succès'),
+                          ],
+                        ),
+                        backgroundColor: Colors.green,
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Erreur lors de la déconnexion: $e'),
+                        backgroundColor: Colors.red,
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  }
+                }
               },
               style: TextButton.styleFrom(foregroundColor: Colors.red),
               child: const Text('Déconnecter'),

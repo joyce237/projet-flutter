@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'auth_service.dart';
+import 'package:provider/provider.dart';
+import 'providers/auth_provider.dart';
 import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -10,46 +11,45 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin {
-  final AuthService _authService = AuthService();
+class _LoginScreenState extends State<LoginScreen>
+    with TickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
 
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  
+
   bool _isLoading = false;
   bool _obscurePassword = true;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
 
-@override
+  @override
   void initState() {
     super.initState();
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 1500),
       vsync: this,
     );
-    
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: const Interval(0.0, 0.7, curve: Curves.easeOut),
-    ));
-    
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0.0, 0.3),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: const Interval(0.3, 1.0, curve: Curves.easeOut),
-    ));
-    
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.0, 0.7, curve: Curves.easeOut),
+      ),
+    );
+
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0.0, 0.3), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: const Interval(0.3, 1.0, curve: Curves.easeOut),
+          ),
+        );
+
     _animationController.forward();
   }
-  
+
   @override
   void dispose() {
     _animationController.dispose();
@@ -63,11 +63,12 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
       setState(() {
         _isLoading = true;
       });
-      
+
       // Haptic feedback
       HapticFeedback.lightImpact();
 
-      final user = await _authService.signIn(
+      final authProvider = context.read<AuthProvider>();
+      final success = await authProvider.signIn(
         _emailController.text.trim(),
         _passwordController.text,
       );
@@ -76,8 +77,8 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
         _isLoading = false;
       });
 
-      if (user != null) {
-        // Connexion réussie - retourner à l'écran principal pour que l'AuthWrapper fasse la redirection
+      if (success) {
+        // Connexion réussie
         HapticFeedback.mediumImpact();
         if (mounted) {
           // Afficher brièvement le message de succès
@@ -92,29 +93,44 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
               ),
               backgroundColor: Colors.green,
               behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
               duration: const Duration(milliseconds: 1500),
             ),
           );
-          
-          // Retourner à l'écran principal - l'AuthWrapper détectera la connexion et redirigera
-          Navigator.of(context).popUntil((route) => route.isFirst);
+
+          // Attendre un peu pour que l'utilisateur voie le message, puis fermer l'écran
+          await Future.delayed(const Duration(milliseconds: 800));
+
+          if (mounted) {
+            // Retourner à l'écran précédent (WelcomeScreen)
+            // L'AuthWrapper détectera l'état et redirigera vers UserHomeScreen
+            Navigator.of(context).pop();
+          }
         }
       } else {
         HapticFeedback.heavyImpact();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: const Row(
+              content: Row(
                 children: [
-                  Icon(Icons.error, color: Colors.white),
-                  SizedBox(width: 12),
-                  Text('Email ou mot de passe incorrect'),
+                  const Icon(Icons.error, color: Colors.white),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      authProvider.errorMessage ??
+                          'Email ou mot de passe incorrect',
+                    ),
+                  ),
                 ],
               ),
               backgroundColor: Colors.red,
               behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
             ),
           );
         }
@@ -122,7 +138,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
     }
   }
 
-@override
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[50],
@@ -135,7 +151,10 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
               child: SlideTransition(
                 position: _slideAnimation,
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24.0,
+                    vertical: 32.0,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -153,13 +172,16 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                           ],
                         ),
                         child: IconButton(
-                          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.teal),
+                          icon: const Icon(
+                            Icons.arrow_back_ios_new,
+                            color: Colors.teal,
+                          ),
                           onPressed: () => Navigator.pop(context),
                         ),
                       ),
-                      
+
                       const SizedBox(height: 40),
-                      
+
                       // Logo and title section
                       Center(
                         child: Column(
@@ -198,9 +220,9 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                           ],
                         ),
                       ),
-                      
+
                       const SizedBox(height: 48),
-                      
+
                       // Form
                       Container(
                         padding: const EdgeInsets.all(24),
@@ -227,14 +249,20 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                                 decoration: InputDecoration(
                                   labelText: 'Adresse email',
                                   hintText: 'exemple@email.com',
-                                  prefixIcon: const Icon(Icons.email_outlined, color: Colors.teal),
+                                  prefixIcon: const Icon(
+                                    Icons.email_outlined,
+                                    color: Colors.teal,
+                                  ),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
                                     borderSide: BorderSide.none,
                                   ),
                                   filled: true,
                                   fillColor: Colors.grey[50],
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 16,
+                                  ),
                                 ),
                                 validator: (value) {
                                   if (value == null || value.isEmpty) {
@@ -246,9 +274,9 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                                   return null;
                                 },
                               ),
-                              
+
                               const SizedBox(height: 20),
-                              
+
                               // Password field
                               TextFormField(
                                 controller: _passwordController,
@@ -258,10 +286,15 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                                 decoration: InputDecoration(
                                   labelText: 'Mot de passe',
                                   hintText: 'Entrez votre mot de passe',
-                                  prefixIcon: const Icon(Icons.lock_outline, color: Colors.teal),
+                                  prefixIcon: const Icon(
+                                    Icons.lock_outline,
+                                    color: Colors.teal,
+                                  ),
                                   suffixIcon: IconButton(
                                     icon: Icon(
-                                      _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                                      _obscurePassword
+                                          ? Icons.visibility_outlined
+                                          : Icons.visibility_off_outlined,
                                       color: Colors.grey,
                                     ),
                                     onPressed: () {
@@ -276,7 +309,10 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                                   ),
                                   filled: true,
                                   fillColor: Colors.grey[50],
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 16,
+                                  ),
                                 ),
                                 validator: (value) {
                                   if (value == null || value.isEmpty) {
@@ -285,9 +321,9 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                                   return null;
                                 },
                               ),
-                              
+
                               const SizedBox(height: 32),
-                              
+
                               // Login button
                               SizedBox(
                                 width: double.infinity,
@@ -308,7 +344,10 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                                           height: 20,
                                           child: CircularProgressIndicator(
                                             strokeWidth: 2,
-                                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                            valueColor:
+                                                AlwaysStoppedAnimation<Color>(
+                                                  Colors.white,
+                                                ),
                                           ),
                                         )
                                       : const Text(
@@ -324,9 +363,9 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                           ),
                         ),
                       ),
-                      
+
                       const SizedBox(height: 32),
-                      
+
                       // Register link
                       Center(
                         child: Row(
@@ -341,17 +380,36 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                                 Navigator.pushReplacement(
                                   context,
                                   PageRouteBuilder(
-                                    pageBuilder: (context, animation, secondaryAnimation) => const RegisterScreen(),
-                                    transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                                      return SlideTransition(
-                                        position: animation.drive(
-                                          Tween(begin: const Offset(1.0, 0.0), end: Offset.zero)
-                                            .chain(CurveTween(curve: Curves.easeInOut)),
-                                        ),
-                                        child: child,
-                                      );
-                                    },
-                                    transitionDuration: const Duration(milliseconds: 300),
+                                    pageBuilder:
+                                        (
+                                          context,
+                                          animation,
+                                          secondaryAnimation,
+                                        ) => const RegisterScreen(),
+                                    transitionsBuilder:
+                                        (
+                                          context,
+                                          animation,
+                                          secondaryAnimation,
+                                          child,
+                                        ) {
+                                          return SlideTransition(
+                                            position: animation.drive(
+                                              Tween(
+                                                begin: const Offset(1.0, 0.0),
+                                                end: Offset.zero,
+                                              ).chain(
+                                                CurveTween(
+                                                  curve: Curves.easeInOut,
+                                                ),
+                                              ),
+                                            ),
+                                            child: child,
+                                          );
+                                        },
+                                    transitionDuration: const Duration(
+                                      milliseconds: 300,
+                                    ),
                                   ),
                                 );
                               },
@@ -377,4 +435,3 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
     );
   }
 }
-

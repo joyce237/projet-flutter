@@ -1,53 +1,44 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
 import 'welcome_screen.dart';
 import 'pharmacist_home_screen.dart';
-import 'user_home_screen.dart'; 
+import 'user_home_screen.dart';
+import 'providers/auth_provider.dart';
 
 class AuthWrapper extends StatelessWidget {
   const AuthWrapper({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<User?>(
-      stream: FirebaseAuth.instance.authStateChanges(),
-      builder: (context, snapshot) {
-        // L'utilisateur n'est pas connecté
-        if (!snapshot.hasData) {
+    return Consumer<AuthProvider>(
+      builder: (context, authProvider, _) {
+        print('AuthWrapper - État: ${authProvider.state}');
+        print('AuthWrapper - isAuthenticated: ${authProvider.isAuthenticated}');
+        print('AuthWrapper - user: ${authProvider.user?.name ?? 'null'}');
+
+        // État de chargement
+        if (authProvider.isLoading || authProvider.state == AuthState.initial) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        // Utilisateur non connecté ou erreur
+        if (!authProvider.isAuthenticated || authProvider.user == null) {
           return const WelcomeScreen();
         }
 
-        // L'utilisateur est connecté, on vérifie son rôle
-        return FutureBuilder<DocumentSnapshot>(
-          future: FirebaseFirestore.instance.collection('users').doc(snapshot.data!.uid).get(),
-          builder: (context, userSnapshot) {
-            // En attendant de connaître le rôle
-            if (userSnapshot.connectionState == ConnectionState.waiting) {
-              return const Scaffold(body: Center(child: CircularProgressIndicator()));
-            }
+        final user = authProvider.user!;
 
-            // Si on ne trouve pas l'utilisateur dans Firestore ou s'il n'a pas de rôle
-            if (!userSnapshot.hasData || !userSnapshot.data!.exists) {
-              // On peut le déconnecter ou afficher une page d'erreur
-              return const WelcomeScreen();
-            }
-
-            final userData = userSnapshot.data!.data() as Map<String, dynamic>;
-            final String role = userData['role'];
-
-            // Aiguiller vers le bon écran en fonction du rôle
-            if (role == 'pharmacist') {
-              return PharmacistHomeScreen(pharmacyId: userData['pharmacyId']);
-            } else if (role == 'user') {
-              return const UserHomeScreen(); // L'écran d'accueil pour l'utilisateur normal
-            } else {
-              // Pour l'admin ou cas non géré, on peut renvoyer vers un écran spécifique
-              // ou simplement l'écran utilisateur par défaut.
-              return const UserHomeScreen();
-            }
-          },
-        );
+        // Aiguiller vers le bon écran en fonction du rôle
+        if (user.role == 'pharmacist') {
+          return PharmacistHomeScreen(pharmacyId: user.pharmacyId ?? '');
+        } else if (user.role == 'user') {
+          return const UserHomeScreen();
+        } else {
+          // Pour l'admin ou cas non géré
+          return const UserHomeScreen();
+        }
       },
     );
   }

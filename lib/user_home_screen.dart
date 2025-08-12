@@ -68,12 +68,21 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     FocusScope.of(context).unfocus();
 
     if (_searchController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Veuillez entrer le nom d\'un médicament'),
+        ),
+      );
       return;
     }
-    
+
     if (_userPosition == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Impossible d\'obtenir votre position. Veuillez activer la localisation.')),
+        const SnackBar(
+          content: Text(
+            'Impossible d\'obtenir votre position. Veuillez activer la localisation.',
+          ),
+        ),
       );
       return;
     }
@@ -81,24 +90,38 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
+      _searchResults = []; // Réinitialiser les résultats précédents
     });
 
     try {
+      // Test de la connexion Firestore
+      bool isConnected = await _searchService.testFirestoreConnection();
+      if (!isConnected) {
+        throw Exception('Impossible de se connecter à la base de données');
+      }
+
       final results = await _searchService.findMedication(
         _searchController.text.trim(),
         _userPosition!,
       );
+
       if (mounted) {
         setState(() {
           _searchResults = results;
+          if (results.isEmpty) {
+            _errorMessage =
+                "Aucune pharmacie ne dispose de ce médicament en stock.";
+          }
         });
       }
     } catch (e) {
-       if (mounted) {
+      if (mounted) {
         setState(() {
-          _errorMessage = "Une erreur est survenue lors de la recherche.";
+          _errorMessage = "Erreur de recherche: ${e.toString()}";
         });
       }
+      // Debug: Afficher l'erreur dans la console
+      print('Erreur lors de la recherche: $e');
     } finally {
       if (mounted) {
         setState(() {
@@ -119,7 +142,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
         ),
       );
     }
-    
+
     if (_searchResults.isEmpty) {
       return const Center(
         child: Text(
@@ -188,7 +211,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
             itemCount: _searchResults.length > 3 ? 3 : _searchResults.length,
             itemBuilder: (context, index) {
               final pharmacy = _searchResults[index];
-              
+
               return Card(
                 margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 elevation: 2,
@@ -213,7 +236,10 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                     ],
                   ),
                   trailing: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: pharmacy.onDuty ? Colors.green : Colors.blueGrey,
                       borderRadius: BorderRadius.circular(8),
@@ -302,9 +328,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const ProfileScreen(),
-                ),
+                MaterialPageRoute(builder: (context) => const ProfileScreen()),
               );
             },
           ),
@@ -312,8 +336,66 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
             icon: const Icon(Icons.logout),
             tooltip: "Déconnexion",
             onPressed: () async {
-              final authProvider = context.read<AuthProvider>();
-              await authProvider.signOut();
+              // Afficher une confirmation
+              bool shouldLogout =
+                  await showDialog<bool>(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return AlertDialog(
+                        title: const Text('Déconnexion'),
+                        content: const Text(
+                          'Êtes-vous sûr de vouloir vous déconnecter ?',
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(false),
+                            child: const Text('Annuler'),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(true),
+                            style: TextButton.styleFrom(
+                              foregroundColor: Colors.red,
+                            ),
+                            child: const Text('Déconnecter'),
+                          ),
+                        ],
+                      );
+                    },
+                  ) ??
+                  false;
+
+              if (shouldLogout) {
+                try {
+                  final authProvider = context.read<AuthProvider>();
+                  await authProvider.signOut();
+
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Row(
+                          children: [
+                            Icon(Icons.check_circle, color: Colors.white),
+                            SizedBox(width: 12),
+                            Text('Déconnecté avec succès'),
+                          ],
+                        ),
+                        backgroundColor: Colors.green,
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Erreur lors de la déconnexion: $e'),
+                        backgroundColor: Colors.red,
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  }
+                }
+              }
             },
           ),
         ],
@@ -337,10 +419,11 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                   onPressed: _performSearch,
                 ),
               ),
-              onSubmitted: (_) => _performSearch(), // Pour lancer la recherche avec le clavier
+              onSubmitted: (_) =>
+                  _performSearch(), // Pour lancer la recherche avec le clavier
             ),
             const SizedBox(height: 20),
-            
+
             // Corps de la page : indicateur de chargement ou liste de résultats
             Expanded(
               child: _isLoading

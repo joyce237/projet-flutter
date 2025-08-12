@@ -32,12 +32,29 @@ class UserModel {
       pharmacyId: map['pharmacyId'],
       phoneNumber: map['phoneNumber'],
       profileImageUrl: map['profileImageUrl'],
-      createdAt: DateTime.fromMillisecondsSinceEpoch(map['createdAt'] ?? 0),
-      lastLoginAt: map['lastLoginAt'] != null 
-          ? DateTime.fromMillisecondsSinceEpoch(map['lastLoginAt']) 
+      createdAt: _dateTimeFromFirestore(map['createdAt']),
+      lastLoginAt: map['lastLoginAt'] != null
+          ? _dateTimeFromFirestore(map['lastLoginAt'])
           : null,
       preferences: map['preferences'],
     );
+  }
+
+  // Méthode utilitaire pour convertir les Timestamp Firestore en DateTime
+  static DateTime _dateTimeFromFirestore(dynamic value) {
+    try {
+      if (value != null && value.toString().contains('Timestamp')) {
+        // C'est un Timestamp Firestore, convertir en DateTime
+        return value.toDate();
+      } else if (value is int) {
+        return DateTime.fromMillisecondsSinceEpoch(value);
+      } else {
+        return DateTime.now(); // Valeur par défaut si format inattendu
+      }
+    } catch (e) {
+      print('Erreur lors de la conversion de date: $e, value: $value');
+      return DateTime.now(); // Fallback sûr
+    }
   }
 
   Map<String, dynamic> toMap() {
@@ -82,7 +99,7 @@ class UserModel {
 
   bool get isPharmacist => role == 'pharmacist';
   bool get isUser => role == 'user';
-  
+
   String get displayName => name.isNotEmpty ? name : email;
   String get initials {
     if (name.isEmpty) return email.substring(0, 1).toUpperCase();

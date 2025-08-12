@@ -8,10 +8,8 @@ class AuthService {
   // Inscription
   Future<User?> register(String name, String email, String password) async {
     try {
-      UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
+      UserCredential userCredential = await _auth
+          .createUserWithEmailAndPassword(email: email, password: password);
       User? user = userCredential.user;
 
       if (user != null) {
@@ -45,6 +43,13 @@ class AuthService {
 
   // Déconnexion
   Future<void> signOut() async {
-    await _auth.signOut();
+    try {
+      print('AuthService - Déconnexion en cours...');
+      await _auth.signOut();
+      print('AuthService - Déconnexion réussie');
+    } catch (e) {
+      print('AuthService - Erreur lors de la déconnexion: $e');
+      throw e; // Relancer l'erreur pour que l'AuthProvider puisse la gérer
+    }
   }
 }
