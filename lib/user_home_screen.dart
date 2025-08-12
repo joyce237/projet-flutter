@@ -3,6 +3,8 @@ import 'package:geolocator/geolocator.dart';
 import 'auth_service.dart'; // Pour la déconnexion
 import 'location_service.dart'; // Service de localisation
 import 'search_service.dart'; // Service de recherche
+import 'search_result_model.dart';
+import 'search_result_screen.dart';
 
 class UserHomeScreen extends StatefulWidget {
   const UserHomeScreen({super.key});
@@ -20,7 +22,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
   bool _isLoading = false;
   String? _errorMessage;
   Position? _userPosition;
-  List<Map<String, dynamic>> _searchResults = [];
+  List<PharmacySearchResult> _searchResults = [];
 
   @override
   void initState() {
@@ -103,7 +105,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     }
   }
 
-  // Widget pour construire la liste de résultats
+  // Widget pour construire la liste de résultats ou naviguer vers l'écran de résultats
   Widget _buildResultsList() {
     if (_errorMessage != null) {
       return Center(
@@ -125,46 +127,117 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
       );
     }
 
-    return ListView.builder(
-      itemCount: _searchResults.length,
-      itemBuilder: (context, index) {
-        final pharmacy = _searchResults[index];
-        final bool isOnDuty = pharmacy['onDuty'] ?? false;
-        
-        return Card(
-          margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          elevation: 3,
-          child: ListTile(
-            leading: Icon(
-              Icons.local_pharmacy,
-              color: isOnDuty ? Colors.green : Colors.teal,
-            ),
-            title: Text(
-              pharmacy['name'],
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(pharmacy['address']),
-                const SizedBox(height: 4),
-                Text(
-                  'Distance: ${pharmacy['distance'].toStringAsFixed(1)} km',
-                  style: const TextStyle(fontWeight: FontWeight.w500),
-                ),
-              ],
-            ),
-            trailing: Chip(
-              label: Text(
-                isOnDuty ? 'DE GARDE' : 'Horaires normaux',
-                style: const TextStyle(color: Colors.white, fontSize: 10),
-              ),
-              backgroundColor: isOnDuty ? Colors.green : Colors.blueGrey,
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-            ),
+    // Si on a des résultats, on affiche un résumé et un bouton pour voir le détail
+    return Column(
+      children: [
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          margin: const EdgeInsets.only(bottom: 16),
+          decoration: BoxDecoration(
+            color: Colors.teal.shade50,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.teal.shade200),
           ),
-        );
-      },
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '${_searchResults.length} pharmacie(s) trouvée(s)',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.teal.shade700,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'La plus proche se trouve à ${_searchResults.first.distanceText}',
+                style: TextStyle(color: Colors.teal.shade600),
+              ),
+              const SizedBox(height: 12),
+              ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => SearchResultScreen(
+                        pharmacies: _searchResults,
+                        userPosition: _userPosition!,
+                        medicationName: _searchController.text.trim(),
+                      ),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.visibility),
+                label: const Text('Voir les résultats'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.teal,
+                  foregroundColor: Colors.white,
+                ),
+              ),
+            ],
+          ),
+        ),
+        // Aperçu rapide des 3 premiers résultats
+        Expanded(
+          child: ListView.builder(
+            itemCount: _searchResults.length > 3 ? 3 : _searchResults.length,
+            itemBuilder: (context, index) {
+              final pharmacy = _searchResults[index];
+              
+              return Card(
+                margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                elevation: 2,
+                child: ListTile(
+                  leading: Icon(
+                    Icons.local_pharmacy,
+                    color: pharmacy.onDuty ? Colors.green : Colors.teal,
+                  ),
+                  title: Text(
+                    pharmacy.name,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(pharmacy.address),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Distance: ${pharmacy.distanceText}',
+                        style: const TextStyle(fontWeight: FontWeight.w500),
+                      ),
+                    ],
+                  ),
+                  trailing: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: pharmacy.onDuty ? Colors.green : Colors.blueGrey,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      pharmacy.statusText,
+                      style: const TextStyle(color: Colors.white, fontSize: 10),
+                    ),
+                  ),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => SearchResultScreen(
+                          pharmacies: _searchResults,
+                          userPosition: _userPosition!,
+                          medicationName: _searchController.text.trim(),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 

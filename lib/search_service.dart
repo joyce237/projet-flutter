@@ -1,11 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:geolocator/geolocator.dart';
+import 'search_result_model.dart';
 
 class SearchService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  Future<List<Map<String, dynamic>>> findMedication(String medicationName, Position userPosition) async {
-    List<Map<String, dynamic>> pharmaciesWithMedication = [];
+  Future<List<PharmacySearchResult>> findMedication(String medicationName, Position userPosition) async {
+    List<PharmacySearchResult> pharmaciesWithMedication = [];
 
     // 1. Rechercher dans l'inventaire
     QuerySnapshot inventorySnapshot = await _firestore
@@ -36,18 +37,23 @@ class SearchService {
           pharmacyLocation.longitude,
         );
 
-        pharmaciesWithMedication.add({
-          'name': pharmacyData['name'],
-          'address': pharmacyData['address'],
-          'onDuty': pharmacyData['onDuty'],
-          'distance': distanceInMeters / 1000, // en km
-          'stock': doc['stock'], // stock disponible
-        });
+        pharmaciesWithMedication.add(PharmacySearchResult(
+          id: pharmacyId,
+          name: pharmacyData['name'] ?? '',
+          address: pharmacyData['address'] ?? '',
+          onDuty: pharmacyData['onDuty'] ?? false,
+          distance: distanceInMeters / 1000, // en km
+          stock: doc['stock'] ?? 0,
+          latitude: pharmacyLocation.latitude,
+          longitude: pharmacyLocation.longitude,
+          phoneNumber: pharmacyData['phoneNumber'],
+          openingHours: pharmacyData['openingHours'],
+        ));
       }
     }
 
     // 4. Trier par distance
-    pharmaciesWithMedication.sort((a, b) => a['distance'].compareTo(b['distance']));
+    pharmaciesWithMedication.sort((a, b) => a.distance.compareTo(b.distance));
 
     return pharmaciesWithMedication;
   }
