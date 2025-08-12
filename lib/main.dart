@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:provider/provider.dart';
 import 'firebase_options.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'auth_wrapper.dart'; // Importer l'aiguilleur
+import 'auth_wrapper.dart';
+import 'providers/auth_provider.dart';
+import 'providers/app_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,14 +19,34 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'HomePharma',
-      theme: ThemeData(
-        primarySwatch: Colors.teal, // Couleur principale
-        visualDensity: VisualDensity.adaptivePlatformDensity,
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AppProvider()),
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
+      ],
+      child: Consumer<AppProvider>(
+        builder: (context, appProvider, _) {
+          return MaterialApp(
+            title: 'HomePharma',
+            theme: ThemeData(
+              primarySwatch: Colors.teal,
+              visualDensity: VisualDensity.adaptivePlatformDensity,
+              brightness: Brightness.light,
+              useMaterial3: true,
+            ),
+            darkTheme: ThemeData(
+              primarySwatch: Colors.teal,
+              visualDensity: VisualDensity.adaptivePlatformDensity,
+              brightness: Brightness.dark,
+              useMaterial3: true,
+            ),
+            themeMode: appProvider.themeMode,
+            locale: appProvider.locale,
+            debugShowCheckedModeBanner: false,
+            home: const AuthWrapper(),
+          );
+        },
       ),
-      debugShowCheckedModeBanner: false,
-      home: const AuthWrapper(), // L'aiguilleur est maintenant la porte d'entrée
     );
   }
 }

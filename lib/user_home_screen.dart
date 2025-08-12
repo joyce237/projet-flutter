@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
-import 'auth_service.dart'; // Pour la déconnexion
+import 'package:provider/provider.dart';
 import 'location_service.dart'; // Service de localisation
 import 'search_service.dart'; // Service de recherche
 import 'search_result_model.dart';
 import 'search_result_screen.dart';
+import 'providers/auth_provider.dart';
+import 'screens/profile_screen.dart';
 
 class UserHomeScreen extends StatefulWidget {
   const UserHomeScreen({super.key});
@@ -17,7 +19,6 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
   final TextEditingController _searchController = TextEditingController();
   final LocationService _locationService = LocationService();
   final SearchService _searchService = SearchService();
-  final AuthService _authService = AuthService();
 
   bool _isLoading = false;
   String? _errorMessage;
@@ -248,15 +249,25 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
         title: const Text('HomePharma'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.person),
+            tooltip: "Profil",
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ProfileScreen(),
+                ),
+              );
+            },
+          ),
+          IconButton(
             icon: const Icon(Icons.logout),
             tooltip: "Déconnexion",
             onPressed: () async {
-              await _authService.signOut();
-              // L'AuthWrapper s'occupera de la redirection
+              final authProvider = context.read<AuthProvider>();
+              await authProvider.signOut();
             },
           ),
-          // Vous pourriez ajouter ici un bouton vers le profil utilisateur
-          // IconButton(icon: Icon(Icons.person), onPressed: () {}),
         ],
       ),
       body: Padding(
