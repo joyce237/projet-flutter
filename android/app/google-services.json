@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "350942136323",
+    "project_id": "homepharma-45879",
+    "storage_bucket": "homepharma-45879.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:350942136323:android:35c57333d554fc9a8a2636",
+        "android_client_info": {
+          "package_name": "com.example.homepharma"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBuExFdUkALsASRkQvVgohm9OicbFxbm00"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
