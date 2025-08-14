@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'providers/auth_provider.dart';
 import 'register_screen.dart';
+import 'auth_wrapper.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -104,9 +105,12 @@ class _LoginScreenState extends State<LoginScreen>
           await Future.delayed(const Duration(milliseconds: 800));
 
           if (mounted) {
-            // Retourner à l'écran précédent (WelcomeScreen)
-            // L'AuthWrapper détectera l'état et redirigera vers UserHomeScreen
-            Navigator.of(context).pop();
+            // Effacer la pile de navigation et retourner à AuthWrapper
+            // L'AuthWrapper détectera l'état authentifié et redirigera vers la page d'accueil appropriée
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (context) => const AuthWrapper()),
+              (route) => false,
+            );
           }
         }
       } else {

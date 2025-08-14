@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'auth_service.dart';
 import 'login_screen.dart';
+import 'auth_wrapper.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -119,8 +120,12 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
             ),
           );
           
-          // Retourner à l'écran principal - l'AuthWrapper détectera la connexion et redirigera
-          Navigator.of(context).popUntil((route) => route.isFirst);
+          // Effacer la pile de navigation et retourner à AuthWrapper
+          // L'AuthWrapper détectera la connexion et redirigera vers la page d'accueil appropriée
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (context) => const AuthWrapper()),
+            (route) => false,
+          );
         }
       } else {
         HapticFeedback.heavyImpact();
