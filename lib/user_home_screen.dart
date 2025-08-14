@@ -26,6 +26,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
   String? _errorMessage;
   Position? _userPosition;
   List<PharmacySearchResult> _searchResults = [];
+  int _selectedIndex = 0;
 
   @override
   void initState() {
@@ -131,8 +132,65 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     }
   }
 
+  // Fonction pour gérer le changement d'onglet
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
+
+  // Widget pour construire le contenu selon l'onglet sélectionné
+  Widget _buildTabContent() {
+    switch (_selectedIndex) {
+      case 0:
+        return _buildSearchTab();
+      case 1:
+        return const CartScreen();
+      case 2:
+        return const ProfileScreen();
+      default:
+        return _buildSearchTab();
+    }
+  }
+
+  // Widget pour l'onglet de recherche (contenu principal actuel)
+  Widget _buildSearchTab() {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        children: [
+          // Barre de recherche
+          TextField(
+            controller: _searchController,
+            decoration: InputDecoration(
+              labelText: 'Chercher un médicament...',
+              hintText: 'Ex: Paracétamol',
+              prefixIcon: const Icon(Icons.search),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(30.0),
+              ),
+              suffixIcon: IconButton(
+                icon: const Icon(Icons.send),
+                onPressed: _performSearch,
+              ),
+            ),
+            onSubmitted: (_) =>
+                _performSearch(), // Pour lancer la recherche avec le clavier
+          ),
+          const SizedBox(height: 20),
+
+          // Corps de la page : indicateur de chargement ou liste de résultats
+          Expanded(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _buildResultsList(),
+          ),
+        ],
+      ),
+    );
+  }
+
   // Widget pour construire la liste de résultats ou naviguer vers l'écran de résultats
-  Widget _buildResultsList() {
     if (_errorMessage != null) {
       return Center(
         child: Text(
@@ -276,62 +334,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
       appBar: AppBar(
         title: const Text('HomePharma'),
         actions: [
-          // Bouton panier avec badge
-          Consumer<CartProvider>(
-            builder: (context, cartProvider, _) {
-              return Stack(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.shopping_cart),
-                    tooltip: "Panier",
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const CartScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  if (cartProvider.itemCount > 0)
-                    Positioned(
-                      right: 6,
-                      top: 6,
-                      child: Container(
-                        padding: const EdgeInsets.all(2),
-                        decoration: BoxDecoration(
-                          color: Colors.red,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        constraints: const BoxConstraints(
-                          minWidth: 20,
-                          minHeight: 20,
-                        ),
-                        child: Text(
-                          '${cartProvider.itemCount}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    ),
-                ],
-              );
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.person),
-            tooltip: "Profil",
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const ProfileScreen()),
-              );
-            },
-          ),
+          // Bouton de déconnexion uniquement
           IconButton(
             icon: const Icon(Icons.logout),
             tooltip: "Déconnexion",
@@ -400,38 +403,58 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            // Barre de recherche
-            TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                labelText: 'Chercher un médicament...',
-                hintText: 'Ex: Paracétamol',
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(30.0),
-                ),
-                suffixIcon: IconButton(
-                  icon: const Icon(Icons.send),
-                  onPressed: _performSearch,
-                ),
-              ),
-              onSubmitted: (_) =>
-                  _performSearch(), // Pour lancer la recherche avec le clavier
+      body: _buildTabContent(),
+      bottomNavigationBar: BottomNavigationBar(
+        items: [
+          BottomNavigationBarItem(
+            icon: const Icon(Icons.search),
+            label: 'Recherche',
+          ),
+          BottomNavigationBarItem(
+            icon: Consumer<CartProvider>(
+              builder: (context, cartProvider, _) {
+                return Stack(
+                  children: [
+                    const Icon(Icons.shopping_cart),
+                    if (cartProvider.itemCount > 0)
+                      Positioned(
+                        right: 0,
+                        top: 0,
+                        child: Container(
+                          padding: const EdgeInsets.all(2),
+                          decoration: BoxDecoration(
+                            color: Colors.red,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          constraints: const BoxConstraints(
+                            minWidth: 16,
+                            minHeight: 16,
+                          ),
+                          child: Text(
+                            '${cartProvider.itemCount}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                  ],
+                );
+              },
             ),
-            const SizedBox(height: 20),
-
-            // Corps de la page : indicateur de chargement ou liste de résultats
-            Expanded(
-              child: _isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : _buildResultsList(),
-            ),
-          ],
-        ),
+            label: 'Panier',
+          ),
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label: 'Profil',
+          ),
+        ],
+        currentIndex: _selectedIndex,
+        selectedItemColor: Colors.amber[800],
+        onTap: _onItemTapped,
       ),
     );
   }
