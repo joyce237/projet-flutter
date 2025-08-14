@@ -34,7 +34,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     _getCurrentLocation();
   }
 
-  // Étape 1: Obtenir la position de l'utilisateur au démarrage de l'écran
+   
   Future<void> _getCurrentLocation() async {
     setState(() {
       _isLoading = true;
@@ -63,7 +63,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     }
   }
 
-  // Étape 2: Lancer la recherche lorsque l'utilisateur appuie sur le bouton
+   
   Future<void> _performSearch() async {
     // Cacher le clavier
     FocusScope.of(context).unfocus();
@@ -91,11 +91,11 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
-      _searchResults = []; // Réinitialiser les résultats précédents
+      _searchResults = [];  
     });
 
     try {
-      // Test de la connexion Firestore
+      
       bool isConnected = await _searchService.testFirestoreConnection();
       if (!isConnected) {
         throw Exception('Impossible de se connecter à la base de données');
@@ -190,7 +190,8 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     );
   }
 
-  // Widget pour construire la liste de résultats ou naviguer vers l'écran de résultats
+   
+  Widget _buildResultsList() {
     if (_errorMessage != null) {
       return Center(
         child: Text(
@@ -211,7 +212,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
       );
     }
 
-    // Si on a des résultats, on affiche un résumé et un bouton pour voir le détail
+    
     return Column(
       children: [
         Container(
