@@ -108,21 +108,73 @@ class _PharmacistHomeScreenState extends State<PharmacistHomeScreen> {
             // On construit l'UI principale seulement si tout est OK
             return Scaffold(
               appBar: AppBar(
-                title: Text(pharmacyName),
+                title: Text(
+                  pharmacyName,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20,
+                  ),
+                ),
                 centerTitle: true,
+                backgroundColor: Colors.teal,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                flexibleSpace: Container(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Colors.teal, Color(0xFF4DB6AC)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                  ),
+                ),
               ),
               body: Center(
                 child: widgetOptions.elementAt(_selectedIndex),
               ),
-              bottomNavigationBar: BottomNavigationBar(
-                items: const <BottomNavigationBarItem>[
-                  BottomNavigationBarItem(icon: Icon(Icons.inventory_2), label: 'Stock'),
-                  BottomNavigationBarItem(icon: Icon(Icons.local_pharmacy), label: 'Ma Pharmacie'),
-                  BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profil'),
-                ],
-                currentIndex: _selectedIndex,
-                selectedItemColor: Colors.amber[800],
-                onTap: _onItemTapped,
+              bottomNavigationBar: Container(
+                decoration: BoxDecoration(
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withValues(alpha: 0.2),
+                      blurRadius: 10,
+                      offset: const Offset(0, -2),
+                    ),
+                  ],
+                ),
+                child: BottomNavigationBar(
+                  items: const <BottomNavigationBarItem>[
+                    BottomNavigationBarItem(
+                      icon: Icon(Icons.inventory_2),
+                      activeIcon: Icon(Icons.inventory_2, size: 28),
+                      label: 'Stock',
+                    ),
+                    BottomNavigationBarItem(
+                      icon: Icon(Icons.local_pharmacy),
+                      activeIcon: Icon(Icons.local_pharmacy, size: 28),
+                      label: 'Ma Pharmacie',
+                    ),
+                    BottomNavigationBarItem(
+                      icon: Icon(Icons.person),
+                      activeIcon: Icon(Icons.person, size: 28),
+                      label: 'Profil',
+                    ),
+                  ],
+                  currentIndex: _selectedIndex,
+                  selectedItemColor: Colors.teal,
+                  unselectedItemColor: Colors.grey[400],
+                  selectedLabelStyle: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 12,
+                  ),
+                  unselectedLabelStyle: const TextStyle(
+                    fontWeight: FontWeight.w400,
+                    fontSize: 12,
+                  ),
+                  type: BottomNavigationBarType.fixed,
+                  backgroundColor: Colors.white,
+                  onTap: _onItemTapped,
+                ),
               ),
             );
           }
