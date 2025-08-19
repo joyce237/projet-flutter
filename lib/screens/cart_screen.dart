@@ -6,7 +6,9 @@ import '../models/cart_item.dart';
 import 'checkout_screen.dart';
 
 class CartScreen extends StatefulWidget {
-  const CartScreen({super.key});
+  const CartScreen({super.key, this.onSearchRequested});
+
+  final VoidCallback? onSearchRequested;
 
   @override
   State<CartScreen> createState() => _CartScreenState();
@@ -120,7 +122,16 @@ class _CartScreenState extends State<CartScreen>
           ),
           const SizedBox(height: 32),
           ElevatedButton.icon(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () {
+              if (widget.onSearchRequested != null) {
+                widget.onSearchRequested!();
+              } else {
+                // Fallback: tenter de pop si route poussée séparément
+                if (Navigator.of(context).canPop()) {
+                  Navigator.of(context).pop();
+                }
+              }
+            },
             icon: const Icon(Icons.search),
             label: const Text('Rechercher des médicaments'),
             style: ElevatedButton.styleFrom(
@@ -387,7 +398,7 @@ class _CartScreenState extends State<CartScreen>
         onTap: onPressed != null
             ? () {
                 HapticFeedback.lightImpact();
-                onPressed!();
+                onPressed();
               }
             : null,
         borderRadius: BorderRadius.circular(8),

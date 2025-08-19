@@ -34,7 +34,6 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     _getCurrentLocation();
   }
 
-   
   Future<void> _getCurrentLocation() async {
     setState(() {
       _isLoading = true;
@@ -63,7 +62,6 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     }
   }
 
-   
   Future<void> _performSearch() async {
     // Cacher le clavier
     FocusScope.of(context).unfocus();
@@ -91,11 +89,10 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
-      _searchResults = [];  
+      _searchResults = [];
     });
 
     try {
-      
       bool isConnected = await _searchService.testFirestoreConnection();
       if (!isConnected) {
         throw Exception('Impossible de se connecter à la base de données');
@@ -145,7 +142,11 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
       case 0:
         return _buildSearchTab();
       case 1:
-        return const CartScreen();
+        return CartScreen(onSearchRequested: () {
+          setState(() {
+            _selectedIndex = 0;
+          });
+        });
       case 2:
         return const ProfileScreen();
       default:
@@ -159,6 +160,64 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
       padding: const EdgeInsets.all(16.0),
       child: Column(
         children: [
+          // Bandeau / carrousel d'images publicitaires
+          SizedBox(
+            height: 140,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: PageView(
+                children: [
+                  for (final img in [
+                    'assets/ads1.jpeg',
+                    'assets/ads2.jpg',
+                    'assets/ads3.jpg',
+                    'assets/ads4.jpeg',
+                    'assets/ads5.jpg',
+                  ])
+                    Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        Image.asset(img, fit: BoxFit.cover),
+                        Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.bottomCenter,
+                              end: Alignment.topCenter,
+                              colors: [
+                                Colors.black.withOpacity(0.45),
+                                Colors.transparent,
+                              ],
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          left: 12,
+                          bottom: 12,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.black54,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Text(
+                              'Promotion',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
           // Barre de recherche
           TextField(
             controller: _searchController,
@@ -174,8 +233,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                 onPressed: _performSearch,
               ),
             ),
-            onSubmitted: (_) =>
-                _performSearch(), // Pour lancer la recherche avec le clavier
+            onSubmitted: (_) => _performSearch(),
           ),
           const SizedBox(height: 20),
 
@@ -190,7 +248,6 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     );
   }
 
-   
   Widget _buildResultsList() {
     if (_errorMessage != null) {
       return Center(
@@ -212,7 +269,6 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
       );
     }
 
-    
     return Column(
       children: [
         Container(

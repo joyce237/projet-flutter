@@ -71,7 +71,7 @@ flutter:
   # the material Icons class.
   uses-material-design: true
   assets:
-    - assets/logo.png
+    - assets/
 
 flutter_native_splash:
   color: "#FFFFFF" # Couleur de fond
