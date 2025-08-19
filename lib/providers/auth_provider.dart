@@ -21,8 +21,10 @@ class AuthProvider extends ChangeNotifier {
       _state == AuthState.authenticated && _user != null;
   bool get isLoading => _state == AuthState.loading;
 
-  AuthProvider() {
-    _initAuthListener();
+  AuthProvider({bool listenAuthChanges = true}) {
+    if (listenAuthChanges) {
+      _initAuthListener();
+    }
   }
 
   void _initAuthListener() {
@@ -220,6 +222,14 @@ class AuthProvider extends ChangeNotifier {
     if (user != null) _user = user;
     if (user == null && newState == AuthState.unauthenticated) _user = null;
     _errorMessage = errorMessage;
+    notifyListeners();
+  }
+
+  @visibleForTesting
+  void debugForceState(AuthState newState, {UserModel? user, String? error}) {
+    _state = newState;
+    _user = user;
+    _errorMessage = error;
     notifyListeners();
   }
 }
