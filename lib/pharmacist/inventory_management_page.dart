@@ -17,7 +17,8 @@ class InventoryManagementPage extends StatefulWidget {
   const InventoryManagementPage({super.key, required this.pharmacyId});
 
   @override
-  State<InventoryManagementPage> createState() => _InventoryManagementPageState();
+  State<InventoryManagementPage> createState() =>
+      _InventoryManagementPageState();
 }
 
 class _InventoryManagementPageState extends State<InventoryManagementPage> {
@@ -45,10 +46,7 @@ class _InventoryManagementPageState extends State<InventoryManagementPage> {
                   color: Colors.blue.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(
-                  Icons.edit,
-                  color: Colors.blue,
-                ),
+                child: const Icon(Icons.edit, color: Colors.blue),
               ),
               const SizedBox(width: 12),
               const Expanded(
@@ -92,10 +90,7 @@ class _InventoryManagementPageState extends State<InventoryManagementPage> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: Text(
-                'Annuler',
-                style: TextStyle(color: Colors.grey[600]),
-              ),
+              child: Text('Annuler', style: TextStyle(color: Colors.grey[600])),
             ),
             ElevatedButton(
               onPressed: () async {
@@ -162,10 +157,7 @@ class _InventoryManagementPageState extends State<InventoryManagementPage> {
                   color: Colors.teal.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(
-                  Icons.add,
-                  color: Colors.teal,
-                ),
+                child: const Icon(Icons.add, color: Colors.teal),
               ),
               const SizedBox(width: 12),
               const Expanded(
@@ -214,10 +206,7 @@ class _InventoryManagementPageState extends State<InventoryManagementPage> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: Text(
-                'Annuler',
-                style: TextStyle(color: Colors.grey[600]),
-              ),
+              child: Text('Annuler', style: TextStyle(color: Colors.grey[600])),
             ),
             ElevatedButton(
               onPressed: () async {
@@ -230,7 +219,7 @@ class _InventoryManagementPageState extends State<InventoryManagementPage> {
                   );
                   return;
                 }
-                
+
                 try {
                   final stock = int.tryParse(stockController.text) ?? 0;
                   await _firestore.collection('inventory').add({
@@ -239,7 +228,7 @@ class _InventoryManagementPageState extends State<InventoryManagementPage> {
                     'stock': stock,
                     'createdAt': FieldValue.serverTimestamp(),
                   });
-                  
+
                   Navigator.of(context).pop();
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
@@ -280,7 +269,7 @@ class _InventoryManagementPageState extends State<InventoryManagementPage> {
       },
     );
   }
-  
+
   // NOUVEAUTÉ : La fonction pour afficher la confirmation de suppression
   void _showDeleteConfirmationDialog(DocumentSnapshot inventoryDoc) {
     final data = inventoryDoc.data() as Map<String, dynamic>;
@@ -301,10 +290,7 @@ class _InventoryManagementPageState extends State<InventoryManagementPage> {
                   color: Colors.red.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(
-                  Icons.warning,
-                  color: Colors.red,
-                ),
+                child: const Icon(Icons.warning, color: Colors.red),
               ),
               const SizedBox(width: 12),
               const Expanded(
@@ -350,10 +336,7 @@ class _InventoryManagementPageState extends State<InventoryManagementPage> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: Text(
-                "Annuler",
-                style: TextStyle(color: Colors.grey[600]),
-              ),
+              child: Text("Annuler", style: TextStyle(color: Colors.grey[600])),
             ),
             ElevatedButton(
               onPressed: () async {
@@ -400,7 +383,6 @@ class _InventoryManagementPageState extends State<InventoryManagementPage> {
     );
   }
 
-
   // Fonction pour déterminer la couleur du stock
   Color _getStockColor(int stock) {
     if (stock <= 0) return Colors.red;
@@ -439,10 +421,7 @@ class _InventoryManagementPageState extends State<InventoryManagementPage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  CircularProgressIndicator(
-                    color: Colors.teal,
-                    strokeWidth: 3,
-                  ),
+                  CircularProgressIndicator(color: Colors.teal, strokeWidth: 3),
                   SizedBox(height: 16),
                   Text(
                     'Chargement du stock...',
@@ -456,7 +435,7 @@ class _InventoryManagementPageState extends State<InventoryManagementPage> {
               ),
             );
           }
-          
+
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
             return Center(
               child: Column(
@@ -486,10 +465,7 @@ class _InventoryManagementPageState extends State<InventoryManagementPage> {
                   const SizedBox(height: 8),
                   const Text(
                     "Commencez par ajouter des médicaments",
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey,
-                    ),
+                    style: TextStyle(fontSize: 14, color: Colors.grey),
                   ),
                 ],
               ),
@@ -555,7 +531,7 @@ class _InventoryManagementPageState extends State<InventoryManagementPage> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                
+
                 // Liste des médicaments
                 Expanded(
                   child: ListView.builder(
@@ -563,7 +539,8 @@ class _InventoryManagementPageState extends State<InventoryManagementPage> {
                     itemBuilder: (context, index) {
                       final doc = inventory[index];
                       final data = doc.data() as Map<String, dynamic>;
-                      final String medicationName = data['medicationName'] ?? 'Nom inconnu';
+                      final String medicationName =
+                          data['medicationName'] ?? 'Nom inconnu';
                       final int stock = data['stock'] ?? 0;
                       final Color stockColor = _getStockColor(stock);
                       final IconData stockIcon = _getStockIcon(stock);
@@ -590,14 +567,12 @@ class _InventoryManagementPageState extends State<InventoryManagementPage> {
                               color: stockColor.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: Icon(
-                              stockIcon,
-                              color: stockColor,
-                              size: 24,
-                            ),
+                            child: Icon(stockIcon, color: stockColor, size: 24),
                           ),
                           title: Text(
                             medicationName,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                               fontWeight: FontWeight.w600,
                               fontSize: 16,
@@ -639,7 +614,8 @@ class _InventoryManagementPageState extends State<InventoryManagementPage> {
                               ),
                             ],
                           ),
-                          trailing: Row(
+                          // Remplacer la Row horizontale par une colonne pour réduire la largeur et éviter l'overflow
+                          trailing: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Container(
@@ -648,25 +624,39 @@ class _InventoryManagementPageState extends State<InventoryManagementPage> {
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: IconButton(
-                                  icon: const Icon(Icons.edit, color: Colors.blue),
+                                  icon: const Icon(
+                                    Icons.edit,
+                                    color: Colors.blue,
+                                    size: 20,
+                                  ),
+                                  padding: const EdgeInsets.all(8),
+                                  constraints: const BoxConstraints(),
                                   tooltip: 'Modifier le stock',
                                   onPressed: () => _showEditStockDialog(doc),
                                 ),
                               ),
-                              const SizedBox(width: 8),
+                              const SizedBox(height: 6),
                               Container(
                                 decoration: BoxDecoration(
                                   color: Colors.red.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: IconButton(
-                                  icon: const Icon(Icons.delete, color: Colors.red),
+                                  icon: const Icon(
+                                    Icons.delete,
+                                    color: Colors.red,
+                                    size: 20,
+                                  ),
+                                  padding: const EdgeInsets.all(8),
+                                  constraints: const BoxConstraints(),
                                   tooltip: 'Supprimer le médicament',
-                                  onPressed: () => _showDeleteConfirmationDialog(doc),
+                                  onPressed: () =>
+                                      _showDeleteConfirmationDialog(doc),
                                 ),
                               ),
                             ],
                           ),
+                          isThreeLine: true,
                         ),
                       );
                     },
